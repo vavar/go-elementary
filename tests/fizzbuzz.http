@@ -1,0 +1,9 @@
+@base_url=http://localhost:8888
+GET {{base_url}}/fizzbuzz/120
+traceparent: 4133bf18-d3f1-4fd3-876c-8455d1590dc6
+###
+
+GET http://localhost:8888/fizzbuzz/
+
+###
+

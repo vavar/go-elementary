@@ -1,0 +1,14 @@
+# @name captcha
+GET http://localhost:8008/captcha
+Content-Type: application/json
+
+###
+
+# @name verifier
+@ref = {{captcha.response.body.$.ref}}
+POST http://localhost:8008/captcha
+
+{
+    "ref": "ea6a6453-4861-425c-9354-13e9c50ee4ea",
+    "answer": 1
+}
