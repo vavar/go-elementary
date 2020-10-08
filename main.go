@@ -1,7 +1,15 @@
 package main
 
 import (
-	"github.com/vavar/go-elementary/day2/captcha"
+	"github.com/vavar/go-elementary/apiproxy"
+	"context"
+	"os/signal"
+	"syscall"
+	"os"
+	"github.com/vavar/go-elementary/captcha"
+	"github.com/vavar/go-elementary/fizzbuzz"
+	"github.com/vavar/go-elementary/auth"
+	"github.com/vavar/go-elementary/trace"
 	"fmt"
 	"io"
 	"log"
@@ -11,7 +19,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"github.com/vavar/go-elementary/fizzbuzz"
+	"go.uber.org/zap"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -44,6 +52,12 @@ func fizzBuzzGolliraHandler(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, res)
 }
 
+func JSONContentMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w,r)
+	})
+}
 
 func main() {
 
@@ -64,13 +78,47 @@ func main() {
 	}
 	defer db.Close()
 
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logger.Sync()
+
 	r := mux.NewRouter()
+	r.Use(JSONContentMiddleware, trace.NewTraceMiddleware(logger))
+	r.HandleFunc("/login", auth.LoginHandler)
 	r.HandleFunc("/hello", helloHandler)
-	r.HandleFunc("/fizzbuzz/", fizzBuzzHandler)
-	r.HandleFunc("/fizzbuzz/{number}", fizzBuzzGolliraHandler)
+	r.HandleFunc("/api/users", apiproxy.UserHandler)
+	r.Handle("/fizzbuzz/{number}", auth.SecureMiddleware(fizzBuzzGolliraHandler))
 	r.Handle("/captcha", captcha.NewCaptchaHandler(db)).Methods(http.MethodGet)
-	r.Handle("/captcha", captcha.NewVerifyCaptchaHandler(db)).Methods(http.MethodPost)
+	r.Handle("/verify", captcha.NewVerifyCaptchaHandler(db)).Methods(http.MethodPost)
+
+	srv := http.Server {
+		Addr: fmt.Sprintf(":%s", viper.GetString("PORT")),
+		Handler: r,
+	}
 
 	fmt.Printf("HTTP Server Started at %s\n", viper.GetString("PORT"))
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", viper.GetString("PORT")), r))
+	log.Fatal(srv.ListenAndServe())
+
+	idleConnsClosed := make(chan struct{})
+	go func() {
+		sigint := make(chan os.Signal)
+		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+		<-sigint
+
+		// We received an interrupt signal, shut down.
+		if err := srv.Shutdown(context.Background()); err != nil {
+			// Error from closing listeners, or context timeout:
+			log.Printf("HTTP server Shutdown: %v", err)
+		}
+		close(idleConnsClosed)
+	}()
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		// Error starting or closing listener:
+		log.Fatalf("HTTP server ListenAndServe: %v", err)
+	}
+
+	<-idleConnsClosed
 }

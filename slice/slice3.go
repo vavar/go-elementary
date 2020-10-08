@@ -1,10 +1,10 @@
-package main
+package slice
 
 import "fmt"
 
 var input3 = "abcdefghijk"
 
-func main() {
+func slice3() {
 	ages := []int{45, 87, 33, 20, 18, 46, 70}
 	//ages := []int{45}
 	top2, ages := ages[:2], ages[2:]

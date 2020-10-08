@@ -1,4 +1,4 @@
-package main 
+package auth 
 
 import (
 	"encoding/base64"
@@ -6,9 +6,6 @@ import (
 	"fmt"
 	"encoding/json"
 	"net/http"
-	"log"
-
-	"github.com/gorilla/mux"
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
@@ -23,7 +20,7 @@ type AuthResponse struct {
 
 var hmacSampleSecret = []byte("ureehhh")
 
-func loginHandler(w http.ResponseWriter, req *http.Request) {
+func LoginHandler(w http.ResponseWriter, req *http.Request) {
 	var cred Credential
 	if err:= json.NewDecoder(req.Body).Decode(&cred); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -55,12 +52,27 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
-	fmt.Println("done")
 }
 
-func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/login", loginHandler)
-
-	log.Fatal(http.ListenAndServe(":8080",r))
+func SecureMiddleware(next http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func( w http.ResponseWriter, r *http.Request) {
+		tokenString := r.Header.Get("authorization")
+		if len(tokenString) <= 7 {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		tokenString = tokenString[7:]
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if t, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				fmt.Println(t)
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+			return hmacSampleSecret,nil
+		})
+		if err != nil || !token.Valid {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w,r)
+	})
 }

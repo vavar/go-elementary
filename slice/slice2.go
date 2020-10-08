@@ -1,4 +1,4 @@
-package main
+package slice
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 var input2 = "abcdefghijk"
 
-func main() {
+func slice2() {
 
 	temp := input2 + "_"
 	result := []string{}

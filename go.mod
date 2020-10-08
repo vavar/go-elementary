@@ -7,5 +7,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/mattn/go-sqlite3 v1.14.4
+	github.com/pkg/errors v0.8.1
 	github.com/spf13/viper v1.7.1
+	go.uber.org/zap v1.10.0
 )

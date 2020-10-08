@@ -1,4 +1,4 @@
-package main
+package slice
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 var input = "abcdefghijk"
 
-func main() {
+func slice1() {
 	inputArr := strings.Split(input, "")
 
 	result := []string{}

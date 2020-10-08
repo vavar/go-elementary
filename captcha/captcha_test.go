@@ -2,7 +2,7 @@ package captcha_test
 
 import (
 	"testing"
-	"github.com/vavar/go-elementary/day2/captcha"
+	"github.com/vavar/go-elementary/captcha"
 )
 
 type captchaInput struct {

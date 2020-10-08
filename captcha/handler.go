@@ -17,33 +17,31 @@ type CaptchaHandler struct {
 }
 
 //NewCaptchaHandler ...
-func NewCaptchaHandler(db *sql.DB) CaptchaHandler {
-	return CaptchaHandler{ db: db }
-}
+func NewCaptchaHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request){
+		s := rand.NewSource(time.Now().UnixNano())
+		r := rand.New(s)
+		pattern := r.Intn(2) + 1
+		leftOper := r.Intn(9) + 1
+		oper := r.Intn(3) + 1
+		rightOper := r.Intn(9) + 1
 
-func (c CaptchaHandler) ServeHTTP( w http.ResponseWriter, req *http.Request) {
-	s := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(s)
-	pattern := r.Intn(2) + 1
-	leftOper := r.Intn(9) + 1
-	oper := r.Intn(3) + 1
-	rightOper := r.Intn(9) + 1
+		ans := Answer(leftOper, oper, rightOper)
+		ref:= uuid.New().String()
+		
+		_, err := db.Exec(`INSERT INTO captcha VALUES (?,?)`, ref, ans )
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": err.Error(),
+			})
+		}
 
-	ans := Answer(leftOper, oper, rightOper)
-	ref:= uuid.New().String()
-	
-	_, err := c.db.Exec(`INSERT INTO captcha VALUES (?,?)`, ref, ans )
-	if err != nil {
+		cc := NewCaptcha(pattern,leftOper,oper,rightOper)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
+			"captcha": cc.String(),
+			"ref": ref,
 		})
 	}
-
-	cc := NewCaptcha(pattern,leftOper,oper,rightOper)
-	json.NewEncoder(w).Encode(map[string]string{
-		"captcha": cc.String(),
-		"ref": ref,
-	})
 }
 
 type answerRequest struct {
