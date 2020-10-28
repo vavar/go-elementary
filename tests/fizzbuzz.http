@@ -1,7 +1,7 @@
 @base_url=http://localhost:8008
-GET {{base_url}}/fizzbuzz/1
+GET {{base_url}}/fizzbuzz/120
 traceparent: 4133bf18-d3f1-4fd3-876c-8455d1590dc6
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IllVQmhMbU52YlE9PSIsImV4cCI6MTYwMjE0MTQyNn0.XjNfYyOkr07eyo-BWhVHOiXJV50XbhfffTjFcVMgx7o
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IllVQmhMbU52YlE9PSIsImV4cCI6MTYwMjE0MjQyNn0.Svi2ToMAScmaBdjJch9S_RDPg9f_sxp42oPQBgHA8FI
 ###
 
 GET http://localhost:8888/fizzbuzz/
